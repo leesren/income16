@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./txt.js"></script>
+    <title>文本复制工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .textarea-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .char-count {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            color: #666;
+            font-size: 14px;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .clear-btn {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px solid #e1e5e9;
+        }
+
+        .clear-btn:hover {
+            background: #e9ecef;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            opacity: 1;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            opacity: 1;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .manual-copy {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .highlight-btn {
+            background: #ffc107;
+            color: #212529;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📋 文本复制工具</h1>
+
+        <div class="textarea-container">
+            <textarea id="textContent" placeholder="请在此处粘贴或输入您需要复制的文本内容..."></textarea>
+            <div class="char-count" id="charCount">0 字符</div>
+        </div>
+
+        <div class="button-group">
+            <button class="copy-btn" id="copyButton">
+                📄 复制文本
+            </button>
+            <button class="clear-btn" id="clearButton">
+                🗑️ 清空内容
+            </button>
+        </div>
+
+        <div class="manual-copy">
+            <button class="highlight-btn" id="highlightButton">
+                🔍 高亮文本
+            </button>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                如果复制按钮无效，请点击"高亮文本"后手动复制
+            </p>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="instructions">
+            <h3>使用说明：</h3>
+            <ol>
+                <li>在上方文本框中粘贴或输入您需要复制的文本</li>
+                <li>点击"复制文本"按钮尝试自动复制</li>
+                <li>如果自动复制失败，点击"高亮文本"按钮，然后手动选择并复制文本</li>
+                <li>在手机输入框中长按并选择"粘贴"即可</li>
+                <li>如需重新输入，可点击"清空内容"按钮</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const textarea = document.getElementById('textContent');
+        const charCount = document.getElementById('charCount');
+        const status = document.getElementById('status');
+        const copyButton = document.getElementById('copyButton');
+        const clearButton = document.getElementById('clearButton');
+        const highlightButton = document.getElementById('highlightButton');
+
+        // 实时更新字符计数
+        textarea.addEventListener('input', function () {
+            const count = this.value.length;
+            charCount.textContent = `${count} 字符`;
+        });
+
+        // 复制文本函数 - 使用最兼容的方法
+        function copyText() {
+            const text = textarea.value.trim();
+
+            if (!text) {
+                showStatus('请输入要复制的文本内容！', 'error');
+                return;
+            }
+
+            try {
+                // 方法1: 使用传统的execCommand方法
+                textarea.select();
+                textarea.setSelectionRange(0, 9999999); // 对于移动设备
+
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showStatus('✅ 文本已成功复制到剪贴板！', 'success');
+                } else {
+                    // 方法1失败，尝试方法2: 创建一个临时元素
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = text;
+                    tempTextArea.style.position = 'fixed';
+                    tempTextArea.style.left = '-999999px';
+                    tempTextArea.style.top = '-999999px';
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    tempTextArea.setSelectionRange(0, 99999999);
+
+                    const tempSuccessful = document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+
+                    if (tempSuccessful) {
+                        showStatus('✅ 文本已成功复制到剪贴板！', 'success');
+                    } else {
+                        showStatus('❌ 自动复制失败，请点击"高亮文本"后手动复制', 'error');
+                    }
+                }
+            } catch (err) {
+                showStatus('❌ 自动复制失败，请点击"高亮文本"后手动复制', 'error');
+                console.error('复制失败:', err);
+            }
+        }
+
+        // 高亮文本函数 - 选择文本但不尝试复制
+        function highlightText() {
+            const text = textarea.value.trim();
+
+            if (!text) {
+                showStatus('请输入要复制的文本内容！', 'error');
+                return;
+            }
+
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            textarea.focus();
+
+            showStatus('📝 文本已高亮，请手动复制 (Ctrl+C 或长按选择复制)', 'success');
+        }
+
+        // 清空文本函数
+        function clearText() {
+            textarea.value = '';
+            charCount.textContent = '0 字符';
+            hideStatus();
+            textarea.focus();
+        }
+
+        // 显示状态信息
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+
+            // 5秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(hideStatus, 5000);
+            }
+        }
+
+        // 隐藏状态信息
+        function hideStatus() {
+            status.style.opacity = '0';
+        }
+
+        // 绑定按钮事件
+        copyButton.addEventListener('click', copyText);
+        clearButton.addEventListener('click', clearText);
+        highlightButton.addEventListener('click', highlightText);
+
+        // 页面加载时自动聚焦到文本框
+        window.addEventListener('load', function () {
+            window.cc && (textarea.value = cc.trim());
+            textarea.focus();
+        });
+    </script>
+</body>
+
+</html>
